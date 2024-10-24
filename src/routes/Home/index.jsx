@@ -1,15 +1,35 @@
 import styled from "@emotion/styled";
-import { Box, Button, CircularProgress, Typography } from "@mui/material";
+import { Box, CircularProgress, Typography } from "@mui/material";
 import axios from "axios";
 import { useEffect, useState } from "react";
 import { io } from "socket.io-client";
 import { motion, AnimatePresence } from "framer-motion";
-import '../../styles/style.css';
 
 const MIN_TEMP = 0;
 const MAX_TEMP = 10;
 
 const normalise = (value) => ((value - MIN_TEMP) * 100) / (MAX_TEMP - MIN_TEMP);
+
+const StyledButton = styled(motion.button)(() => ({
+    fontFamily: "'Press Start 2P', cursive",
+    backgroundColor: '#444',
+    color: 'white',
+    border: '2px solid #666',
+    padding: '8px 16px',
+    cursor: 'pointer',
+    boxShadow: 'inset -2px -2px 0px #000',
+    borderRadius: '4px',
+    fontSize: '12px',
+    minWidth: '80px',
+    height: '36px',
+    '&:hover': {
+        backgroundColor: '#555'
+    },
+    '&:disabled': {
+        opacity: 0.5,
+        cursor: 'not-allowed'
+    }
+}));
 
 const ChatHeader = styled(Box)(() => ({
     padding: '12px',
@@ -30,23 +50,43 @@ const ChatMensajesContainer = styled(Box)(() => ({
         borderRadius: '4px'
     }
 }));
-
 const ChatInputContainer = styled(Box)(() => ({
     display: 'flex',
     padding: '10px',
     background: '#333',
     gap: '10px',
     borderTop: '4px solid #444',
-    input: {
-        flex: 1,
-        padding: '8px',
-        fontFamily: "'Press Start 2P', cursive",
-        fontSize: '12px',
-        background: '#111',
-        border: '2px solid #444',
-        color: '#fff',
-        borderRadius: '4px'
-    }
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%'
+}));
+
+const ChatInput = styled('input')(() => ({
+    width: '60%',
+    padding: '8px',
+    fontFamily: "'Press Start 2P', cursive",
+    fontSize: '12px',
+    background: '#111',
+    border: '2px solid #444',
+    color: '#fff',
+    borderRadius: '4px',
+    marginRight: '10px'
+}));
+
+const ChatSendButton = styled(StyledButton)(() => ({
+    width: '35%',
+    padding: '8px',
+    fontSize: '10px',
+    minWidth: 'unset',
+    height: '36px',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#444',
+    color: 'white',
+    border: '2px solid #666',
+    borderRadius: '4px',
+    cursor: 'pointer'
 }));
 
 const MensajeContainer = styled(Box)(() => ({
@@ -129,7 +169,7 @@ export default function Home() {
     }, []);
 
     const comerFunction = async () => {
-        if(getEstado?.alimentandose == true) return;
+        if(getEstado?.alimentandose) return;
         try {
             await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/comer`);
         } catch(err) {
@@ -138,7 +178,7 @@ export default function Home() {
     };
 
     const beberFunction = async () => {
-        if(getEstado?.alimentandose == true) return;
+        if(getEstado?.alimentandose) return;
         try {
             await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/beber`);
         } catch(err) {
@@ -147,7 +187,7 @@ export default function Home() {
     };
 
     const dormirFunction = async () => {
-        if(getEstado?.alimentandose == true || getEstado?.bebiendo == true) return;
+        if(getEstado?.alimentandose || getEstado?.bebiendo) return;
         try {
             if(getEstado?.durmiendo == false) {
                 await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/dormir`);
@@ -279,52 +319,51 @@ export default function Home() {
                         </AnimatePresence>
                     </ChatMensajesContainer>
                     <ChatInputContainer>
-                        <input 
+                        <ChatInput 
                             type="text" 
                             value={getText} 
                             onChange={(e) => setText(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && hablarle()}
                             placeholder="Escribe algo..."
                         />
-                        <motion.button 
-                            className="retro-button"
+                        <ChatSendButton 
                             onClick={hablarle}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
                         >
                             Enviar
-                        </motion.button>
+                        </ChatSendButton>
                     </ChatInputContainer>
                 </ChatContainer>
             </Box>
             <Box display="flex" gap="10px" mt="20px">
-                <motion.button 
-                    className="retro-button"
+                <StyledButton 
+                    as={motion.button}
                     onClick={comerFunction}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     disabled={getEstado?.alimentandose}
                 >
                     {getEstado?.alimentandose ? 'Comiendo...' : 'Comer'}
-                </motion.button>
-                <motion.button 
-                    className="retro-button"
+                </StyledButton>
+                <StyledButton 
+                    as={motion.button}
                     onClick={beberFunction}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     disabled={getEstado?.bebiendo}
                 >
                     {getEstado?.bebiendo ? 'Bebiendo...' : 'Beber'}
-                </motion.button>
-                <motion.button 
-                    className="retro-button"
+                </StyledButton>
+                <StyledButton 
+                    as={motion.button}
                     onClick={dormirFunction}
                     whileHover={{ scale: 1.05 }}
                     whileTap={{ scale: 0.95 }}
                     disabled={getEstado?.alimentandose || getEstado?.bebiendo}
                 >
                     {getEstado?.durmiendo ? 'Despertar' : 'Dormir'}
-                </motion.button>
+                </StyledButton>
             </Box>
         </Box>
     );
