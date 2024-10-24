@@ -11,7 +11,6 @@ const MAX_TEMP = 10;
 
 const normalise = (value) => ((value - MIN_TEMP) * 100) / (MAX_TEMP - MIN_TEMP);
 
-// Mantenemos los componentes estilizados originales con mejoras visuales
 const ChatHeader = styled(Box)(() => ({
     padding: '12px',
     borderBottom: '4px solid #444',
@@ -97,7 +96,6 @@ const RetroLabel = styled(Typography)(() => ({
     width: 'fit-content'
 }));
 
-// Variantes de animación para Framer Motion
 const variantesEstado = {
     normal: {
         scale: [1, 1.05],
@@ -130,7 +128,6 @@ export default function Home() {
         return () => socket.disconnect();
     }, []);
 
-    // Mantenemos las funciones originales
     const comerFunction = async () => {
         if(getEstado?.alimentandose == true) return;
         try {
