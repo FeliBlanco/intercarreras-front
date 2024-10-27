@@ -8,7 +8,71 @@ import { motion, AnimatePresence } from "framer-motion";
 const MIN_TEMP = 0;
 const MAX_TEMP = 10;
 
+const ESTADOS = {
+    1: "normal",
+    2: "durmiendo",
+    3: "hambriento",
+    4: "riendo",
+    5: "triste",
+    6: "enojado",
+    7: "sediento",
+    8: "muerto"
+};
+
 const normalise = (value) => ((value - MIN_TEMP) * 100) / (MAX_TEMP - MIN_TEMP);
+
+const ConsolaContainer = styled(Box)(() => ({
+    width: '512px',
+    border: '8px solid #444',
+    borderRadius: '8px',
+    backgroundColor: '#111',
+    padding: '20px',
+    display: 'flex',
+    flexDirection: 'column',
+    gap: '20px',
+    boxShadow: '0 0 30px rgba(0, 0, 0, 0.7)',
+    position: 'relative'
+}));
+
+const PantallaGif = styled(Box)(() => ({
+    width: '100%',
+    height: '256px',
+    border: '4px solid #444',
+    borderRadius: '4px',
+    overflow: 'hidden',
+    backgroundColor: '#fff',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center'
+}));
+
+const EstadoGif = styled('img')(() => ({
+    display: 'block',
+    width: '100%',
+    height: '100%',
+    objectFit: 'contain'
+}));
+
+const EstadoLabel = styled(Typography)(() => ({
+    fontFamily: "'Press Start 2P', cursive",
+    color: '#fff',
+    fontSize: '14px',
+    padding: '8px 16px',
+    textAlign: 'center',
+    backgroundColor: '#000',
+    border: '2px solid #444',
+    borderRadius: '4px',
+    margin: '10px 0',
+    width: '100%'
+}));
+
+const BotonesContainer = styled(Box)(() => ({
+    display: 'flex',
+    gap: '10px',
+    justifyContent: 'center',
+    padding: '10px',
+    borderTop: '2px solid #444'
+}));
 
 const StyledButton = styled(motion.button)(() => ({
     fontFamily: "'Press Start 2P', cursive",
@@ -50,6 +114,7 @@ const ChatMensajesContainer = styled(Box)(() => ({
         borderRadius: '4px'
     }
 }));
+
 const ChatInputContainer = styled(Box)(() => ({
     display: 'flex',
     padding: '10px',
@@ -111,22 +176,6 @@ const ChatContainer = styled(Box)(() => ({
     background: '#222'
 }));
 
-const PouContainer = styled(Box)(() => ({
-    border: '4px solid #444',
-    width: '400px',
-    height: '400px',
-    background: '#111',
-    borderRadius: '8px',
-    position: 'relative',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-    color: '#fff',
-    fontFamily: "'Press Start 2P', cursive",
-    fontSize: '14px',
-    boxShadow: '0 0 20px rgba(0, 0, 0, 0.5)'
-}));
-
 const RetroLabel = styled(Typography)(() => ({
     fontFamily: "'Press Start 2P', cursive !important",
     color: '#fff',
@@ -138,20 +187,43 @@ const RetroLabel = styled(Typography)(() => ({
 
 const variantesEstado = {
     normal: {
-        scale: [1, 1.05],
-        transition: { duration: 2, repeat: Infinity, repeatType: "reverse" }
+        scale: [1, 1.05, 1],
+        transition: {
+            duration: 2,
+            repeat: Infinity,
+            repeatType: "reverse"
+        }
     },
     comiendo: {
-        rotate: [0, -5, 5, -5, 0],
-        transition: { duration: 1, repeat: Infinity }
+        rotate: [-5, 5, -5],
+        transition: {
+            duration: 0.5,
+            repeat: Infinity,
+            repeatType: "reverse"
+        }
     },
     bebiendo: {
-        y: [0, -5, 0],
-        transition: { duration: 1, repeat: Infinity }
+        y: [-5, 0, -5],
+        transition: {
+            duration: 1,
+            repeat: Infinity,
+            repeatType: "reverse"
+        }
     },
     durmiendo: {
-        scale: [1, 1.02],
-        transition: { duration: 3, repeat: Infinity, repeatType: "reverse" }
+        scale: [1, 1.02, 1],
+        transition: {
+            duration: 3,
+            repeat: Infinity,
+            repeatType: "reverse"
+        }
+    },
+    muerto: {
+        rotate: 90,
+        scale: 0.95,
+        transition: {
+            duration: 0.5
+        }
     }
 };
 
@@ -161,64 +233,153 @@ export default function Home() {
     const [getChat, setChat] = useState([]);
 
     useEffect(() => {
-        const socket = io(`${import.meta.env.VITE_APP_API_URL}`);
-        socket.on('estado', (data) => {
-            setEstado(data);
+        console.group('🔍 Monitor de Estado Pou');
+        console.log('Estado actual:', {
+            hambre: getEstado?.hambre || 'No disponible',
+            sed: getEstado?.sed || 'No disponible',
+            temperatura: getEstado?.temperatura || 'No disponible',
+            estadoNombre: ESTADOS[getEstado?.estado] || "normal",
+            estadoNumerico: getEstado?.estado || 1,
+            acciones: {
+                alimentandose: getEstado?.alimentandose || false,
+                bebiendo: getEstado?.bebiendo || false,
+                durmiendo: getEstado?.durmiendo || false,
+                muerto: getEstado?.muerto || false
+            }
         });
-        return () => socket.disconnect();
+        console.groupEnd();
+    }, [getEstado]);
+
+    useEffect(() => {
+        const socket = io(`${import.meta.env.VITE_APP_API_URL}`);
+
+        socket.on('connect', () => {
+            console.log('🔌 Socket conectado');
+        });
+
+        socket.on('estado', (data) => {
+            console.log('📦 Datos recibidos del socket:', data);
+            const estadoProcesado = {
+                ...data,
+                estadoNombre: ESTADOS[data.estado] || "normal",
+                estadoNumerico: data.estado
+            };
+            setEstado(estadoProcesado);
+        });
+
+        socket.on('disconnect', () => {
+            console.log('🔌 Socket desconectado');
+        });
+
+        socket.on('error', (error) => {
+            console.error('❌ Error en el socket:', error);
+        });
+
+        return () => {
+            console.log('🔌 Limpiando conexión del socket');
+            socket.disconnect();
+        };
     }, []);
 
     const comerFunction = async () => {
-        if(getEstado?.alimentandose) return;
+        if (getEstado?.alimentandose) {
+            console.log('⚠️ Acción comer cancelada: Ya está comiendo');
+            return;
+        }
         try {
+            console.log('🍽️ Iniciando acción comer');
             await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/comer`);
-        } catch(err) {
-            console.error(err);
+            console.log('✅ Acción comer completada');
+        } catch (err) {
+            console.error('❌ Error en acción comer:', err);
         }
     };
 
     const beberFunction = async () => {
-        if(getEstado?.alimentandose) return;
+        if (getEstado?.alimentandose) {
+            console.log('⚠️ Acción beber cancelada: Ya está alimentándose');
+            return;
+        }
         try {
+            console.log('🥤 Iniciando acción beber');
             await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/beber`);
-        } catch(err) {
-            console.error(err);
+            console.log('✅ Acción beber completada');
+        } catch (err) {
+            console.error('❌ Error en acción beber:', err);
         }
     };
 
     const dormirFunction = async () => {
-        if(getEstado?.alimentandose || getEstado?.bebiendo) return;
+        if (getEstado?.alimentandose || getEstado?.bebiendo) {
+            console.log('⚠️ Acción dormir cancelada: Está comiendo o bebiendo');
+            return;
+        }
         try {
-            if(getEstado?.durmiendo == false) {
+            console.log('💤 Iniciando acción dormir/despertar');
+            if (getEstado?.durmiendo == false) {
                 await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/dormir`);
+                console.log('✅ Pou se fue a dormir');
             } else {
                 await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/despertarse`);
+                console.log('✅ Pou se despertó');
             }
-        } catch(err) {
-            console.error(err);
+        } catch (err) {
+            console.error('❌ Error en acción dormir/despertar:', err);
+        }
+    };
+
+    const revivirFunction = async () => {
+        try {
+            console.log('🔄 Iniciando acción revivir');
+            await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/revivir`);
+            console.log('✅ Pou ha sido revivido');
+        } catch (err) {
+            console.error('❌ Error al revivir a Pou:', err);
         }
     };
 
     const hablarle = async () => {
         try {
+            console.log('💭 Iniciando conversación');
             const text = getText;
             setText('');
-            setChat(i => [...i, {user: 'Yo', text}]);
+            setChat(i => [...i, { user: 'Yo', text }]);
             const response = await axios.post(`${import.meta.env.VITE_APP_API_URL}/pou/hablarle`, {
                 text
             });
             const res = response.data;
-            setChat(i => [...i, {user: 'Pou', text: res.content}]);
-        } catch(err) {
-            console.error(err);
+            console.log('✅ Respuesta recibida:', res);
+            setChat(i => [...i, { user: 'Pou', text: res.content }]);
+        } catch (err) {
+            console.error('❌ Error en la conversación:', err);
         }
     };
 
     const obtenerEstadoAnimacion = () => {
+        if (getEstado?.muerto) return "muerto";
         if (getEstado?.alimentandose) return "comiendo";
         if (getEstado?.bebiendo) return "bebiendo";
         if (getEstado?.durmiendo) return "durmiendo";
         return "normal";
+    };
+
+    const obtenerGifEstado = () => {
+        if (getEstado?.muerto) return "/images/muerto.png";
+        if (getEstado?.alimentandose) return "/images/riendo.gif";
+        if (getEstado?.bebiendo) return "/images/riendo.gif";
+        if (getEstado?.durmiendo) return "/images/duerme.gif";
+
+        switch (getEstado?.estado) {
+            case 1: return "/images/normal.gif";
+            case 2: return "/images/duerme.gif";
+            case 3: return "/images/hambriento.gif";
+            case 4: return "/images/riendo.gif";
+            case 5: return "/images/triste.gif";
+            case 6: return "/images/enojado.gif";
+            case 7: return "/images/triste.gif";
+            case 8: return "/images/muerto.png";
+            default: return "/images/normal.gif";
+        }
     };
 
     return (
@@ -237,11 +398,11 @@ export default function Home() {
                     border: '4px solid #555'
                 }}
             >
-                <Box display="flex" flexDirection="column" sx={{margin: '20px'}} gap="20px">
+                <Box display="flex" flexDirection="column" sx={{ margin: '20px' }} gap="20px">
                     <Box display="flex" flexDirection="column" alignItems="center">
                         <RetroLabel>Sed</RetroLabel>
-                        <CircularProgress 
-                            variant="determinate" 
+                        <CircularProgress
+                            variant="determinate"
                             value={getEstado?.sed}
                             sx={{
                                 color: '#3498db',
@@ -256,8 +417,8 @@ export default function Home() {
                     </Box>
                     <Box display="flex" alignItems="center" flexDirection="column">
                         <RetroLabel>Hambre</RetroLabel>
-                        <CircularProgress 
-                            variant="determinate" 
+                        <CircularProgress
+                            variant="determinate"
                             value={getEstado?.hambre}
                             sx={{
                                 color: '#2ecc71',
@@ -272,8 +433,8 @@ export default function Home() {
                     </Box>
                     <Box display="flex" alignItems="center" flexDirection="column">
                         <RetroLabel>Temperatura</RetroLabel>
-                        <CircularProgress 
-                            variant="determinate" 
+                        <CircularProgress
+                            variant="determinate"
                             value={normalise(getEstado?.temperatura)}
                             sx={{
                                 color: '#e74c3c',
@@ -287,16 +448,58 @@ export default function Home() {
                         />
                     </Box>
                 </Box>
-                <motion.div
-                    animate={obtenerEstadoAnimacion()}
-                    variants={variantesEstado}
-                >
-                    <PouContainer>
-                        <RetroLabel sx={{ position: 'absolute', bottom: '10px', left: '10px' }}>
-                            Estado: {getEstado?.state_name}
-                        </RetroLabel>
-                    </PouContainer>
-                </motion.div>
+
+                <ConsolaContainer>
+                    <PantallaGif>
+                        <EstadoGif
+                            src={obtenerGifEstado()}
+                            alt={`Estado: ${getEstado?.estadoNombre}`}
+                        />
+                    </PantallaGif>
+
+                    <EstadoLabel>
+                        Estado: {getEstado?.estadoNombre || 'normal'}
+                    </EstadoLabel>
+                    <BotonesContainer>
+                        <StyledButton
+                            onClick={comerFunction}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            disabled={getEstado?.alimentandose || getEstado?.muerto}
+                        >
+                            {getEstado?.alimentandose ? 'Comiendo...' : 'Comer'}
+                        </StyledButton>
+                        <StyledButton
+                            onClick={beberFunction}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            disabled={getEstado?.bebiendo || getEstado?.muerto}
+                        >
+                            {getEstado?.bebiendo ? 'Bebiendo...' : 'Beber'}
+                        </StyledButton>
+                        <StyledButton
+                            onClick={dormirFunction}
+                            whileHover={{ scale: 1.05 }}
+                            whileTap={{ scale: 0.95 }}
+                            disabled={getEstado?.alimentandose || getEstado?.bebiendo || getEstado?.muerto}
+                        >
+                            {getEstado?.durmiendo ? 'Despertar' : 'Dormir'}
+                        </StyledButton>
+                        {getEstado?.muerto && (
+                            <StyledButton
+                                onClick={revivirFunction}
+                                whileHover={{ scale: 1.05 }}
+                                whileTap={{ scale: 0.95 }}
+                                style={{
+                                    backgroundColor: '#e74c3c',
+                                    animation: 'pulse 2s infinite'
+                                }}
+                            >
+                                Revivir
+                            </StyledButton>
+                        )}
+                    </BotonesContainer>
+                </ConsolaContainer>
                 <ChatContainer>
                     <ChatHeader>
                         <RetroLabel>Conversación</RetroLabel>
@@ -319,14 +522,14 @@ export default function Home() {
                         </AnimatePresence>
                     </ChatMensajesContainer>
                     <ChatInputContainer>
-                        <ChatInput 
-                            type="text" 
-                            value={getText} 
+                        <ChatInput
+                            type="text"
+                            value={getText}
                             onChange={(e) => setText(e.target.value)}
                             onKeyPress={(e) => e.key === 'Enter' && hablarle()}
                             placeholder="Escribe algo..."
                         />
-                        <ChatSendButton 
+                        <ChatSendButton
                             onClick={hablarle}
                             whileHover={{ scale: 1.05 }}
                             whileTap={{ scale: 0.95 }}
@@ -335,35 +538,6 @@ export default function Home() {
                         </ChatSendButton>
                     </ChatInputContainer>
                 </ChatContainer>
-            </Box>
-            <Box display="flex" gap="10px" mt="20px">
-                <StyledButton 
-                    as={motion.button}
-                    onClick={comerFunction}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={getEstado?.alimentandose}
-                >
-                    {getEstado?.alimentandose ? 'Comiendo...' : 'Comer'}
-                </StyledButton>
-                <StyledButton 
-                    as={motion.button}
-                    onClick={beberFunction}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={getEstado?.bebiendo}
-                >
-                    {getEstado?.bebiendo ? 'Bebiendo...' : 'Beber'}
-                </StyledButton>
-                <StyledButton 
-                    as={motion.button}
-                    onClick={dormirFunction}
-                    whileHover={{ scale: 1.05 }}
-                    whileTap={{ scale: 0.95 }}
-                    disabled={getEstado?.alimentandose || getEstado?.bebiendo}
-                >
-                    {getEstado?.durmiendo ? 'Despertar' : 'Dormir'}
-                </StyledButton>
             </Box>
         </Box>
     );
