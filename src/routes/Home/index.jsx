@@ -449,6 +449,38 @@ export default function Home() {
                             }}
                         />
                     </Box>
+                    <Box display="flex" alignItems="center" flexDirection="column">
+                        <RetroLabel>Salud</RetroLabel>
+                        <CircularProgress
+                            variant="determinate"
+                            value={getEstado?.salud}
+                            sx={{
+                                color: 'red',
+                                width: '50px !important',
+                                height: '50px !important',
+                                borderRadius: '50%',
+                                backgroundColor: 'black',
+                                padding: '5px',
+                                boxShadow: '0 0 15px rgba(231, 76, 60, 0.7)'
+                            }}
+                        />
+                    </Box>
+                    <Box display="flex" alignItems="center" flexDirection="column">
+                        <RetroLabel>Sueño</RetroLabel>
+                        <CircularProgress
+                            variant="determinate"
+                            value={getEstado?.sueno}
+                            sx={{
+                                color: 'red',
+                                width: '50px !important',
+                                height: '50px !important',
+                                borderRadius: '50%',
+                                backgroundColor: 'black',
+                                padding: '5px',
+                                boxShadow: '0 0 15px rgba(231, 76, 60, 0.7)'
+                            }}
+                        />
+                    </Box>
                 </Box>
 
                 <ConsolaContainer>
