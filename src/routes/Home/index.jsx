@@ -12,7 +12,7 @@ const ESTADOS = {
     1: "normal",
     2: "durmiendo",
     3: "hambriento",
-    4: "riendo",
+    4: "feliz",
     5: "triste",
     6: "enojado",
     7: "sediento",
@@ -282,7 +282,8 @@ export default function Home() {
     }, []);
 
     const comerFunction = async () => {
-        if (getEstado?.alimentandose) {
+        if(getEstado?.durmiendo == true) return;
+        if (getEstado?.alimentandose || getEstado?.bebiendo) {
             console.log('⚠️ Acción comer cancelada: Ya está comiendo');
             return;
         }
@@ -296,7 +297,8 @@ export default function Home() {
     };
 
     const beberFunction = async () => {
-        if (getEstado?.alimentandose) {
+        if(getEstado?.durmiendo == true) return;
+        if (getEstado?.alimentandose || getEstado?.bebiendo) {
             console.log('⚠️ Acción beber cancelada: Ya está alimentándose');
             return;
         }
@@ -349,7 +351,7 @@ export default function Home() {
             });
             const res = response.data;
             console.log('✅ Respuesta recibida:', res);
-            setChat(i => [...i, { user: 'Pou', text: res.content }]);
+            setChat(i => [...i, { user: 'Buggy', text: res.content }]);
         } catch (err) {
             console.error('❌ Error en la conversación:', err);
         }
